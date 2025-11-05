@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/dbConnect";
 import Product from "@/models/Product";
+import Warehouse from "@/models/Warehouse";
 import { generateProductCode } from "@/lib/generateProductCode";
 import { NextResponse } from "next/server";
 
@@ -11,7 +12,8 @@ export const getProducts = async () => {
       .populate({
         path: "skus.stockByWarehouse.warehouse",
         strictPopulate: false,
-      });
+      })
+      .populate('category');
     return NextResponse.json({ success: true, data: products });
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -26,7 +28,7 @@ export const createProduct = async (req) => {
     const body = await req.json();
     const transactionCode = await generateProductCode();
     const productData = { ...body, transactionCode };
-    if (productData.account) delete productData.account;
+    if (productData.account) delete productData.account; // Remove unnecessary data
     const product = await Product.create(productData);
     return NextResponse.json({ success: true, data: product }, { status: 201 });
   } catch (error) {
@@ -36,10 +38,10 @@ export const createProduct = async (req) => {
 };
 
 // GET product by ID
-export const getProductById = async (req, { params }) => {
+export const getProductById = async (id) => {
   await dbConnect();
   try {
-    const product = await Product.findById(params.id)
+    const product = await Product.findById(id)
       .populate({
         path: "skus.stockByWarehouse.warehouse",
         strictPopulate: false,
@@ -47,22 +49,22 @@ export const getProductById = async (req, { params }) => {
     if (!product) return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: product });
   } catch (error) {
-    console.error("Error fetching product:", error);
+    console.error("Error fetching product by ID:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });
   }
 };
 
 // UPDATE product
-export const updateProduct = async (req, { params }) => {
+export const updateProduct = async (id, req) => {
   await dbConnect();
   try {
     const body = await req.json();
-    const product = await Product.findByIdAndUpdate(params.id, body, {
+    const updatedProduct = await Product.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
     });
-    if (!product) return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
-    return NextResponse.json({ success: true, data: product });
+    if (!updatedProduct) return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+    return NextResponse.json({ success: true, data: updatedProduct });
   } catch (error) {
     console.error("Error updating product:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });
@@ -70,11 +72,11 @@ export const updateProduct = async (req, { params }) => {
 };
 
 // DELETE product
-export const deleteProduct = async (req, { params }) => {
+export const deleteProduct = async (id) => {
   await dbConnect();
   try {
-    const deletedProduct = await Product.deleteOne({ _id: params.id });
-    if (deletedProduct.deletedCount === 0)
+    const deletedProduct = await Product.deleteOne({ _id: id });
+    if (!deletedProduct.deletedCount)
       return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
     return NextResponse.json({ success: true, message: "Product deleted successfully" });
   } catch (error) {

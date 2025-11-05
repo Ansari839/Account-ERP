@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import useGrnStore from '@/store/grnStore';
 
 const grnItemSchema = z.object({
   product: z.string().min(1, "Product is required"),
@@ -29,10 +31,12 @@ const grnSchema = z.object({
 });
 
 const GrnForm = () => {
+  const router = useRouter();
   const [products, setProducts] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const { addGrn } = useGrnStore();
 
   const { register, handleSubmit, control, setValue, reset, formState: { errors, isValid }, watch } = useForm({
     resolver: zodResolver(grnSchema),
@@ -63,11 +67,16 @@ const GrnForm = () => {
     const fetchData = async (url, setter, name) => {
       try {
         const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
-        setter(data.data);
+        // Ensure data.data is an array before setting state
+        setter(Array.isArray(data.data) ? data.data : []);
       } catch (error) {
         console.error(`Failed to fetch ${name}`, error);
         toast.error(`Failed to fetch ${name}`);
+        setter([]); // Set to empty array on error
       }
     };
 
@@ -78,22 +87,11 @@ const GrnForm = () => {
 
   const onSubmit = async (data) => {
     try {
-      const res = await fetch('/api/grn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (res.ok) {
-        toast.success("GRN created successfully");
-        reset();
-      } else {
-        const errorData = await res.json();
-        toast.error(errorData.message || "Failed to create GRN");
-      }
+      await addGrn({ ...data, createdBy: '60d21b4667d0d8992e610c85' }); // Hardcoded user ID
+      reset();
+      router.push('/dashboard/inventory/grn');
     } catch (error) {
       console.error("Failed to create GRN", error);
-      toast.error("An unexpected error occurred.");
     }
   };
 
@@ -112,13 +110,13 @@ const GrnForm = () => {
             </div>
             <div>
               <Label htmlFor="account">Account</Label>
-              <Select onValueChange={(value) => setValue('account', value)}>
+              <Select onValueChange={(value) => setValue('account', value)} value={watch('account')}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select an account" />
                 </SelectTrigger>
                 <SelectContent>
                   {accounts
-                    .filter(acc => ['Payable', 'Inventory'].includes(acc.type))
+                    .filter(acc => ['Assets', 'Liability'].includes(acc.type))
                     .map(acc => <SelectItem key={acc._id} value={acc._id}>{acc.name} ({acc.type})</SelectItem>)}
                 </SelectContent>
               </Select>

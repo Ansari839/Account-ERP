@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import useProductVariantStore from '@/store/productVariantStore';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,7 @@ const getPermutations = (arrays) => {
 };
 
 const ProductForm = ({ productId }) => {
+  const router = useRouter();
   const { variants: allVariants, fetchVariants } = useProductVariantStore();
   
   // Form state
@@ -135,7 +138,7 @@ const ProductForm = ({ productId }) => {
 
   const handleUpdate = async (productData) => {
     const response = await fetch(`/api/products/${productId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(productData),
     });
@@ -154,11 +157,11 @@ const ProductForm = ({ productId }) => {
       if (!result.success) {
         throw new Error(result.message || 'An unknown error occurred');
       }
-      alert('Product deleted successfully!');
-      // Redirect or update UI
+      toast.success('Product deleted successfully!');
+      router.push('/dashboard/products');
     } catch (err) {
       setError(err.message);
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -191,11 +194,12 @@ const ProductForm = ({ productId }) => {
         throw new Error(result.message || 'An unknown error occurred');
       }
 
-      alert(`Product ${productId ? 'updated' : 'created'} successfully!`);
+      toast.success(`Product ${productId ? 'updated' : 'created'} successfully!`);
+      router.push('/dashboard/products');
     } catch (err) {
       setError(err.message);
       console.error("API Error:", err);
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }

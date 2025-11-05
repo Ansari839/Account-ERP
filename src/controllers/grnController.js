@@ -3,6 +3,7 @@ import dbConnect from '@/lib/dbConnect';
 import Grn from '@/models/Grn';
 import Product from '@/models/Product';
 import StockEntry from '@/models/StockEntry';
+import User from '@/models/User'; // Import the User model
 import { NextResponse } from 'next/server';
 
 export const createGrn = async (req) => {
@@ -12,7 +13,8 @@ export const createGrn = async (req) => {
 
   try {
     const body = await req.json();
-    const { date, items, notes, createdBy, account } = body;
+    const { date, items, notes, account } = body;
+    const createdBy = body.createdBy || '690b9c79e0cd19faa26689a2'; // Fallback to default user
 
     if (!account) {
       return NextResponse.json({ success: false, message: 'Account is required' }, { status: 400 });
@@ -88,6 +90,33 @@ export const getGrnByCode = async (code) => {
   await dbConnect();
   const grn = await Grn.findOne({ grnCode: code }).populate('items.product').populate('items.warehouse').populate('createdBy');
   return grn;
+};
+
+export const updateGrnByCode = async (code, updatedData) => {
+  await dbConnect();
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const grn = await Grn.findOne({ grnCode: code }).session(session);
+    if (!grn) {
+      throw new Error('GRN not found');
+    }
+
+    // Update GRN fields
+    grn.notes = updatedData.notes;
+    // In a real application, you would add more logic here to handle item updates,
+    // stock adjustments, etc. For simplicity, we are only updating the notes.
+
+    await grn.save({ session });
+    await session.commitTransaction();
+    return grn;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 export const deleteGrnByCode = async (code) => {

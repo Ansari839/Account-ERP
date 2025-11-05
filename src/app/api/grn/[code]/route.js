@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getGrnByCode, deleteGrnByCode } from '@/controllers/grnController';
+import { getGrnByCode, deleteGrnByCode, updateGrnByCode } from '@/controllers/grnController';
 
 // Get a single GRN by grnCode
 export async function GET(request, { params }) {
   try {
-    const grn = await getGrnByCode(params.code);
+    const { code } = await params;
+    const grn = await getGrnByCode(code);
     if (!grn) {
       return NextResponse.json({ message: 'GRN not found' }, { status: 404 });
     }
@@ -15,10 +16,27 @@ export async function GET(request, { params }) {
   }
 }
 
+// Update a GRN by grnCode
+export async function PUT(request, { params }) {
+  try {
+    const { code } = await params;
+    const body = await request.json();
+    const updatedGrn = await updateGrnByCode(code, body);
+    return NextResponse.json({ success: true, data: updatedGrn });
+  } catch (error) {
+    console.error('Error updating GRN:', error);
+    if (error.message === 'GRN not found') {
+      return NextResponse.json({ message: 'GRN not found' }, { status: 404 });
+    }
+    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 // Delete a GRN by grnCode
 export async function DELETE(request, { params }) {
   try {
-    const result = await deleteGrnByCode(params.code);
+    const { code } = await params;
+    const result = await deleteGrnByCode(code);
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error deleting GRN:', error);

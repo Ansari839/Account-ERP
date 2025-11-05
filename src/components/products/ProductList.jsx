@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import useProductStore from "@/store/productStore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,14 +9,14 @@ import ProductForm from "../ProductForm";
 import { toast } from "sonner";
 
 const ProductList = () => {
-  const { products, loading, error, fetchProducts, addProduct, editProduct, removeProduct } = useProductStore();
+  const { products, loading, error, fetchProducts, addProduct, removeProduct } = useProductStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const router = useRouter();
 
   useEffect(() => { fetchProducts(); }, []);
 
-  const handleAdd = () => { setSelectedProduct(null); setIsModalOpen(true); };
-  const handleEdit = (product) => { setSelectedProduct(product); setIsModalOpen(true); };
+  const handleAdd = () => { setIsModalOpen(true); };
+  const handleEdit = (product) => { router.push(`/dashboard/products/edit/${product._id}`); };
   const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
@@ -29,13 +30,8 @@ const ProductList = () => {
   };
 
   const handleSubmit = async (data) => {
-    if (selectedProduct) {
-      await editProduct(selectedProduct._id, data);
-      toast.success("Product updated successfully");
-    } else {
-      await addProduct(data);
-      toast.success("Product added successfully");
-    }
+    await addProduct(data);
+    toast.success("Product added successfully");
     setIsModalOpen(false);
   };
 
@@ -75,8 +71,8 @@ const ProductList = () => {
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{selectedProduct ? "Edit Product" : "Add New Product"}</DialogTitle></DialogHeader>
-          <ProductForm onSubmit={handleSubmit} product={selectedProduct} onClose={() => setIsModalOpen(false)} />
+          <DialogHeader><DialogTitle>Add New Product</DialogTitle></DialogHeader>
+          <ProductForm onSubmit={handleSubmit} onClose={() => setIsModalOpen(false)} />
         </DialogContent>
       </Dialog>
     </div>

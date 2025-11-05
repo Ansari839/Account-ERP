@@ -13,22 +13,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
 import { Eye, Trash2 } from 'lucide-react';
+import useGrnStore from '@/store/grnStore';
+import GrnDetailsModal from './GrnDetailsModal';
 
 const GrnList = () => {
-  const [grns, setGrns] = useState([]);
+  const { grns, fetchGrns, removeGrn, updateGrn } = useGrnStore();
   const [purchases, setPurchases] = useState([]);
+  const [selectedGrn, setSelectedGrn] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchGrns = async () => {
-      try {
-        const res = await fetch('/api/grn');
-        const data = await res.json();
-        setGrns(data);
-      } catch (error) {
-        console.error("Failed to fetch GRNs", error);
-        toast.error("Failed to fetch GRNs");
-      }
-    };
+    fetchGrns();
     const fetchPurchases = async () => {
       try {
         const res = await fetch('/api/purchases');
@@ -39,9 +34,8 @@ const GrnList = () => {
         toast.error("Failed to fetch purchases");
       }
     };
-    fetchGrns();
     fetchPurchases();
-  }, []);
+  }, [fetchGrns]);
 
   const getBillStatus = (grnId) => {
     const purchase = purchases.find(p => p.grn === grnId);
@@ -49,55 +43,74 @@ const GrnList = () => {
   };
 
   const handleDelete = async (grnCode) => {
+    console.log("Deleting GRN with code:", grnCode);
     try {
-      const res = await fetch(`/api/grn/${grnCode}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        toast.success("GRN deleted successfully");
-        setGrns(grns.filter(grn => grn.grnCode !== grnCode));
-      } else {
-        toast.error("Failed to delete GRN");
-      }
+      await removeGrn(grnCode);
     } catch (error) {
       console.error("Failed to delete GRN", error);
-      toast.error("Failed to delete GRN");
+    }
+  };
+
+  const handleView = (grn) => {
+    setSelectedGrn(grn);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedGrn(null);
+  };
+
+  const handleUpdateGrn = async (updatedGrn) => {
+    try {
+      await updateGrn(updatedGrn.grnCode, updatedGrn);
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to update GRN", error);
     }
   };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>GRN Code</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Items</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {grns.map((grn) => (
-          <TableRow key={grn._id}>
-            <TableCell>{grn.grnCode}</TableCell>
-            <TableCell>{new Date(grn.date).toLocaleDateString()}</TableCell>
-            <TableCell>{grn.items.length}</TableCell>
-            <TableCell>
-              <Badge>{getBillStatus(grn._id)}</Badge>
-            </TableCell>
-            <TableCell>
-              <Button variant="ghost" size="icon">
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(grn.grnCode)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TableCell>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>GRN Code</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Items</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {grns.map((grn) => (
+            <TableRow key={grn._id}>
+              <TableCell>{grn.grnCode}</TableCell>
+              <TableCell>{new Date(grn.date).toLocaleDateString()}</TableCell>
+              <TableCell>{grn.items.length}</TableCell>
+              <TableCell>
+                <Badge>{getBillStatus(grn._id)}</Badge>
+              </TableCell>
+              <TableCell>
+                <Button variant="ghost" size="icon" onClick={() => handleView(grn)}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(grn.grnCode)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {isModalOpen && (
+        <GrnDetailsModal
+          grn={selectedGrn}
+          onClose={handleCloseModal}
+          onUpdate={handleUpdateGrn}
+        />
+      )}
+    </>
   );
 };
 
