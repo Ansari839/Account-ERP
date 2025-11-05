@@ -68,7 +68,10 @@ const menuItems = [
   {
     title: "Purchases",
     icon: <CreditCard size={20} />,
-    href: "/dashboard/purchases",
+    children: [
+      { title: "Purchase List", href: "/dashboard/purchases" },
+      { title: "GRN", href: "/dashboard/inventory/grn" },
+    ],
   },
   {
     title: "Inventory",

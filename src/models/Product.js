@@ -30,14 +30,10 @@ const ProductSchema = new mongoose.Schema({
     price: Number, // Optional, overrides base price
     stockByWarehouse: [{
       warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' },
-      stock: { type: Number, required: true, default: 0 }
+      qty: { type: Number, required: true, default: 0 }
     }],
   }],
-  account: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Account',
-    required: true,
-  },
 }, { timestamps: true });
 
+console.log("Product Schema Definition:", ProductSchema.paths);
 export default mongoose.models.Product || mongoose.model('Product', ProductSchema);

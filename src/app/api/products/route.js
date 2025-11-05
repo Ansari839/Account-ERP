@@ -1,7 +1,7 @@
-import { getProducts, createProduct } from '@/controllers/productController';
+import { getProducts, createProduct } from "@/controllers/productController";
 
 export async function GET(req) {
-  return getProducts(req);
+  return getProducts();
 }
 
 export async function POST(req) {

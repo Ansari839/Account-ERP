@@ -25,6 +25,15 @@ const PurchaseSchema = new mongoose.Schema({
     enum: ["Draft", "Confirmed", "Cancelled"],
     default: "Draft",
   },
+  grn: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Grn",
+  },
+  billStatus: {
+    type: String,
+    enum: ["Pending", "Billed"],
+    default: "Pending",
+  },
   paymentMethod: {
     type: String,
     enum: ["Cash", "Card", "Online"],

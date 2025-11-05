@@ -6,7 +6,7 @@ const stockEntrySchema = new mongoose.Schema(
     warehouse: { type: mongoose.Schema.Types.ObjectId, ref: "Warehouse", required: true },
     account: { type: mongoose.Schema.Types.ObjectId, ref: "Account", required: true },
     quantity: { type: Number, required: true },
-    totalValue: { type: Number, required: true },
+    totalValue: { type: Number },
     type: { type: String, enum: ["IN", "OUT"], default: "IN" },
     note: String,
   },

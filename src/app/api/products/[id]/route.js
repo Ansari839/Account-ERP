@@ -1,4 +1,4 @@
-import { getProductById, updateProduct, deleteProduct } from '@/controllers/productController';
+import { getProductById, updateProduct, deleteProduct } from "@/controllers/productController";
 
 export async function GET(req, { params }) {
   return getProductById(req, { params });
