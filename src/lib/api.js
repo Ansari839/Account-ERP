@@ -119,7 +119,7 @@ export const deleteProduct = async (id) => {
   return response.data.data;
 };
 
-//////////////////////////
+///////////////////////////
 // Accounts
 //////////////////////////
 export const getAccounts = async () => {
