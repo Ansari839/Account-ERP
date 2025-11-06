@@ -3,21 +3,40 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 const AccountForm = ({ onSuccess, editData }) => {
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+  const form = useForm({
     defaultValues: {
       name: '',
       parent: '',
       type: 'Asset',
       openingDebit: 0,
       openingCredit: 0,
+      category: '',
     }
   });
 
+  const { handleSubmit, reset, setValue, formState: { isSubmitting } } = form;
+
   const [accounts, setAccounts] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
 
   // Fetch accounts for the parent dropdown
   useEffect(() => {
@@ -29,7 +48,7 @@ const AccountForm = ({ onSuccess, editData }) => {
         }
       } catch (error) {
         console.error('Failed to fetch accounts:', error);
-        setMessage({ type: 'error', text: 'Could not load parent accounts.' });
+        toast.error('Could not load parent accounts.');
       }
     };
     fetchAccounts();
@@ -55,9 +74,6 @@ const AccountForm = ({ onSuccess, editData }) => {
   }, [editData, setValue, reset]);
 
   const onSubmit = async (data) => {
-    setIsLoading(true);
-    setMessage({ type: '', text: '' });
-
     try {
       let response;
       const payload = { ...data, parent: data.parent || null };
@@ -65,11 +81,11 @@ const AccountForm = ({ onSuccess, editData }) => {
       if (editData) {
         // Update existing account
         response = await axios.patch(`/api/accounts/${editData._id}`, payload);
-        setMessage({ type: 'success', text: 'Account updated successfully!' });
+        toast.success('Account updated successfully!');
       } else {
         // Create new account
         response = await axios.post('/api/accounts', payload);
-        setMessage({ type: 'success', text: 'Account created successfully!' });
+        toast.success('Account created successfully!');
       }
 
       if (response.data.success) {
@@ -80,134 +96,157 @@ const AccountForm = ({ onSuccess, editData }) => {
       }
     } catch (error) {
       const errorMsg = error.response?.data?.error || 'An unexpected error occurred.';
-      setMessage({ type: 'error', text: errorMsg });
-    } finally {
-      setIsLoading(false);
-      setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+      toast.error(errorMsg);
     }
   };
 
   return (
-    <div className="w-full md:w-1/2 mx-auto">
-      <div className="bg-white shadow-lg rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">{editData ? 'Edit Account' : 'Create New Account'}</h2>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Name Field */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-            <input
-              id="name"
-              {...register('name', { required: 'Account name is required.' })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-          </div>
+    <Form {...form}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
+        {/* Name Field */}
+        <FormField
+          control={form.control}
+          name="name"
+          rules={{ required: "Account name is required." }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Account Name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          {/* Type Field */}
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700">Type</label>
-            <select
-              id="type"
-              {...register('type', { required: 'Account type is required.' })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="Asset">Asset</option>
-              <option value="Liability">Liability</option>
-                                <option value="Capital">Capital</option>              <option value="Income">Income</option>
-              <option value="Expense">Expense</option>
-            </select>
-            {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
-          </div>
+        {/* Type Field */}
+        <FormField
+          control={form.control}
+          name="type"
+          rules={{ required: "Account type is required." }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an account type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Asset">Asset</SelectItem>
+                  <SelectItem value="Liability">Liability</SelectItem>
+                  <SelectItem value="Capital">Capital</SelectItem>
+                  <SelectItem value="Income">Income</SelectItem>
+                  <SelectItem value="Expense">Expense</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          {/* Parent Account Field */}
-          <div>
-            <label htmlFor="parent" className="block text-sm font-medium text-gray-700">Parent Account (Optional)</label>
-            <select
-              id="parent"
-              {...register('parent')}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">None</option>
-              {accounts.filter(acc => acc._id !== editData?._id).map(acc => (
-                <option key={acc._id} value={acc._id}>{acc.name}</option>
-              ))}
-            </select>
-          </div>
+        {/* Parent Account Field */}
+        <FormField
+          control={form.control}
+          name="parent"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Parent Account (Optional)</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a parent account" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {accounts.filter(acc => acc._id !== editData?._id).map(acc => (
+                    <SelectItem key={acc._id} value={acc._id}>{acc.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          {/* Opening Balance Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="openingDebit" className="block text-sm font-medium text-gray-700">Opening Debit</label>
-              <input
-                id="openingDebit"
-                type="number"
-                step="0.01"
-                {...register('openingDebit', { valueAsNumber: true })}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setValue('openingCredit', 0);
-                  }
-                }}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="openingCredit" className="block text-sm font-medium text-gray-700">Opening Credit</label>
-              <input
-                id="openingCredit"
-                type="number"
-                step="0.01"
-                {...register('openingCredit', { valueAsNumber: true })}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setValue('openingDebit', 0);
-                  }
-                }}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-          </div>
+        {/* Opening Balance Fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="openingDebit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Opening Debit</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(parseFloat(e.target.value) || 0);
+                      if (e.target.value) {
+                        setValue('openingCredit', 0);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="openingCredit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Opening Credit</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(parseFloat(e.target.value) || 0);
+                      if (e.target.value) {
+                        setValue('openingDebit', 0);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-          {/* Category Field */}
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
-            <input
-              id="category"
-              type="text"
-              {...register('category', { required: 'Category is required.' })}
-              placeholder="e.g. Customer, Supplier, Expense"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
-          </div>
+        {/* Category Field */}
+        <FormField
+          control={form.control}
+          name="category"
+          rules={{ required: "Category is required." }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Customer, Supplier, Expense" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          {/* Submit Button */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`px-6 py-2 font-semibold text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:bg-gray-400
-                ${editData 
-                  ? 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500' 
-                  : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500'}`
-              }
-            >
-              {isLoading ? 'Saving...' : (editData ? 'Update Account' : 'Save Account')}
-            </button>
-          </div>
-        </form>
-
-        {/* Success/Error Message */}
-        {message.text && (
-          <div className={`mt-4 text-sm p-3 rounded-md ${
-            message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            {message.text}
-          </div>
-        )}
-      </div>
-    </div>
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : (editData ? 'Update Account' : 'Save Account')}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 };
 

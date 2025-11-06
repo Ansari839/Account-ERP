@@ -89,7 +89,15 @@ const GrnList = () => {
               <TableCell>{new Date(grn.date).toLocaleDateString()}</TableCell>
               <TableCell>{grn.items.length}</TableCell>
               <TableCell>
-                <Badge>{getBillStatus(grn._id)}</Badge>
+                <Badge
+                  className={
+                    grn.status === 'Pending'
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-green-500 text-white'
+                  }
+                >
+                  {grn.status}
+                </Badge>
               </TableCell>
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={() => handleView(grn)}>

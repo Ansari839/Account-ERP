@@ -14,6 +14,7 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import useGrnStore from '@/store/grnStore';
+import useAppStore from '@/store/useAppStore';
 
 const grnItemSchema = z.object({
   product: z.string().min(1, "Product is required"),
@@ -37,6 +38,7 @@ const GrnForm = () => {
   const [accounts, setAccounts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const { addGrn } = useGrnStore();
+  const { user } = useAppStore();
 
   const { register, handleSubmit, control, setValue, reset, formState: { errors, isValid }, watch } = useForm({
     resolver: zodResolver(grnSchema),
@@ -87,7 +89,7 @@ const GrnForm = () => {
 
   const onSubmit = async (data) => {
     try {
-      await addGrn({ ...data, createdBy: '60d21b4667d0d8992e610c85' }); // Hardcoded user ID
+      await addGrn({ ...data, createdBy: user._id });
       reset();
       router.push('/dashboard/inventory/grn');
     } catch (error) {

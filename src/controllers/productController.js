@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/dbConnect";
 import Product from "@/models/Product";
+import ProductCategory from "@/models/ProductCategory";
 import Warehouse from "@/models/Warehouse";
 import { generateProductCode } from "@/lib/generateProductCode";
 import { NextResponse } from "next/server";
@@ -26,11 +27,12 @@ export const createProduct = async (req) => {
   await dbConnect();
   try {
     const body = await req.json();
-    const transactionCode = await generateProductCode();
-    const productData = { ...body, transactionCode };
-    if (productData.account) delete productData.account; // Remove unnecessary data
-    const product = await Product.create(productData);
-    return NextResponse.json({ success: true, data: product }, { status: 201 });
+    const { productCode, name, category, price, skus } = body;
+    
+    const newProduct = new Product({ productCode, name, category, price, skus });
+    await newProduct.save();
+    
+    return NextResponse.json({ success: true, data: newProduct });
   } catch (error) {
     console.error("Error creating product:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });
@@ -41,7 +43,7 @@ export const createProduct = async (req) => {
 export const getProductById = async (id) => {
   await dbConnect();
   try {
-    const product = await Product.findById(id)
+    const product = await Product.findOne({ _id: id })
       .populate({
         path: "skus.stockByWarehouse.warehouse",
         strictPopulate: false,
@@ -59,7 +61,7 @@ export const updateProduct = async (id, req) => {
   await dbConnect();
   try {
     const body = await req.json();
-    const updatedProduct = await Product.findByIdAndUpdate(id, body, {
+    const updatedProduct = await Product.findOneAndUpdate({ _id: id }, body, {
       new: true,
       runValidators: true,
     });
@@ -75,8 +77,8 @@ export const updateProduct = async (id, req) => {
 export const deleteProduct = async (id) => {
   await dbConnect();
   try {
-    const deletedProduct = await Product.deleteOne({ _id: id });
-    if (!deletedProduct.deletedCount)
+    const deletedProduct = await Product.findOneAndDelete({ _id: id });
+    if (!deletedProduct)
       return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
     return NextResponse.json({ success: true, message: "Product deleted successfully" });
   } catch (error) {

@@ -70,7 +70,8 @@ const menuItems = [
     icon: <CreditCard size={20} />,
     children: [
       { title: "Purchase List", href: "/dashboard/purchases" },
-      { title: "GRN", href: "/dashboard/inventory/grn" },
+      { title: "GRN List", href: "/dashboard/purchases/grn" },
+      { title: "Create GRN", href: "/dashboard/purchases/grn/new" },
     ],
   },
   {

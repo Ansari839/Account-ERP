@@ -55,6 +55,11 @@ const GrnSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  status: {
+    type: String,
+    enum: ['Pending', 'Invoiced'],
+    default: 'Pending',
+  },
 }, { timestamps: true });
 
 GrnSchema.pre('save', async function (next) {

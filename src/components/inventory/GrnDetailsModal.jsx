@@ -55,7 +55,7 @@ const GrnDetailsModal = ({ grn, onClose, onUpdate }) => {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div>
-            <Label>Date</Label>
+            <div className="font-semibold">Date</div>
             <Input value={new Date(editedGrn.date).toLocaleDateString()} disabled />
           </div>
           <div>

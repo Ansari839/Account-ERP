@@ -36,7 +36,7 @@ export const getCategories = async () => {
 };
 
 export const createCategory = async (category) => {
-  const response = await api.post("/product-categories", category);
+  const response = await api.patch("/product-categories", category);
   return response.data.data;
 };
 

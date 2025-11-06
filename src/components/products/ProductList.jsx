@@ -13,7 +13,7 @@ const ProductList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   const handleAdd = () => { setIsModalOpen(true); };
   const handleEdit = (product) => { router.push(`/dashboard/products/edit/${product._id}`); };
@@ -55,7 +55,7 @@ const ProductList = () => {
         <TableBody>
           {products.map((product) => (
             <TableRow key={product._id}>
-              <TableCell>{product.transactionCode}</TableCell>
+              <TableCell>{product.productCode}</TableCell>
               <TableCell>{product.name}</TableCell>
               <TableCell>{product.category?.name}</TableCell>
               <TableCell>{product.price}</TableCell>

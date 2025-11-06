@@ -1,11 +1,14 @@
 import Product from '@/models/Product';
 
-export async function generateProductCode() {
-  const latestProduct = await Product.findOne().sort({ transactionCode: -1 });
-  let nextId = 1;
-  if (latestProduct && latestProduct.transactionCode) {
-    const lastId = parseInt(latestProduct.transactionCode.substring(2));
-    nextId = lastId + 1;
+
+export const generateProductCode = async () => {
+  await dbConnect();
+  try {
+    const lastProduct = await Product.findOne().sort({ createdAt: -1 });
+    const newCode = lastProduct ? lastProduct.code + 1 : 1;
+    return newCode;
+  } catch (error) {
+    console.error('Error generating product code:', error);
+    throw new Error('Could not generate product code');
   }
-  return `PR${nextId}`;
-}
+};
